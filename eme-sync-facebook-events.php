@@ -55,6 +55,12 @@ register_deactivation_hook(__FILE__,'deactivate_eme_sfe');
 function activate_eme_sfe() { wp_schedule_event(time(), 'daily', 'eme_sfe_execute_sync'); }
 function deactivate_eme_sfe() { wp_clear_scheduled_hook('eme_sfe_execute_sync'); }
 add_action('eme_sfe_execute_sync', 'eme_sfe_process_events');
+add_action('init','eme_sfe_load_textdomain');
+
+function eme_sfe_load_textdomain() {
+   $thisDir = dirname( plugin_basename( __FILE__ ) );
+   load_plugin_textdomain('eme_sfe', false, $thisDir.'/langs');
+}
 
 function update_schedule($eme_sfe_frequency) {
 	
@@ -228,7 +234,7 @@ function eme_sfe_options_page() {
 
 		update_schedule($eme_sfe_frequency);
 
-		$msg = "Synchronization of Facebook events to Events Made Easy complete.";
+		$msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
 ?>
 		<div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
 <?php
@@ -266,7 +272,7 @@ function eme_sfe_options_page() {
 		<?php
       eme_options_input_text ( __('Facebook App ID', 'eme_sfe' ), 'eme_sfe_api_key', '');
       eme_options_input_text ( __('Facebook App Secret', 'eme_sfe' ), 'eme_sfe_api_secret', '');
-      $eme_sfe_frequencies=array('daily'=>"Daily","twicedaily"=>"Twice Daily","hourly"=>"Hourly","none"=>"None");
+      $eme_sfe_frequencies=array('daily'=>__("Daily",'eme_sfe'),"twicedaily"=>__("Twice Daily",'eme_sfe'),"hourly"=>__("Hourly",'eme_sfe'),"none"=>__("None",'eme_sfe'));
       eme_options_select (__('Update Fequency','eme_sfe'), 'eme_sfe_frequency', $eme_sfe_frequencies, '');
       eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
 		
@@ -280,15 +286,15 @@ function eme_sfe_options_page() {
 		}
       ?>
 		</td></tr>
-      <tr><td colspan="2"><input type="submit" value="Update" class="button-primary" name="update" /></td></tr>
+      <tr><td colspan="2"><input type="submit" value="<?php _e('Update','eme_sfe'); ?>" class="button-primary" name="update" /></td></tr>
       </table>
 		</form>
 	</div>
 	<?php if(isset($events)) { ?>
 		<div style="margin-top:20px;font-size:14px;color:#444;border:1px solid #999;padding:15px;width:95%;font-face:couriernew;">
-		<span style="color:red;">Updating all facebook events...</span><br />
+		<span style="color:red;"><?php _e('Updating all facebook events...','eme_sfe'); ?></span><br />
 		<?php eme_sfe_send_events($events); ?><br />
-		<span style="color:red;">Events Made Easy updated with current Facebook events.</span><br /><br />
+		<span style="color:red;"><?php _e('Events Made Easy updated with current Facebook events.','eme_sfe'); ?></span><br /><br />
 		</div>
 	<?php } ?>
 <?php	
