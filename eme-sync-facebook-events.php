@@ -253,7 +253,9 @@ function eme_sfe_options_page() {
    $this_page_url=$_SERVER['REQUEST_URI'];
 
    if (!function_exists("eme_options_input_text") || !function_exists("eme_options_input_text")) {
-      add_action('admin_notices', 'eme_sfe_eme_needed');
+      ?>
+      <div id="message" class="error"><p><?php _e("This plugin requires 'Events Made Easy' to be installed.",'eme_sfe'); ?> </p></div>
+      <?php
       return;
    }
 
