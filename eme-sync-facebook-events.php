@@ -4,7 +4,7 @@ Plugin Name: EME Sync Facebook Events
 Plugin URI: http://www.e-dynamics.be/wordpress
 Description: Sync Facebook Events to The Events Made Easy Plugin 
 Author: Franky Van Liedekerke
-Version: 1.0.0
+Version: 1.0.1
 Author URI: http://www.e-dynamics.be
 */
  
@@ -212,6 +212,7 @@ function eme_sfe_options_page() {
 		$eme_sfe_api_uids = array();
 	$eme_sfe_frequency = get_option('eme_sfe_frequency');
 	
+   $events=false;
 	#Get new updated option values, and save them
 	if( !empty($_POST['update']) ) {
 	
@@ -290,7 +291,7 @@ function eme_sfe_options_page() {
       </table>
 		</form>
 	</div>
-	<?php if(isset($events)) { ?>
+   <?php if ($events !== false && is_array($events)) { ?>
 		<div style="margin-top:20px;font-size:14px;color:#444;border:1px solid #999;padding:15px;width:95%;font-face:couriernew;">
 		<span style="color:red;"><?php _e('Updating all facebook events...','eme_sfe'); ?></span><br />
 		<?php eme_sfe_send_events($events); ?><br />
