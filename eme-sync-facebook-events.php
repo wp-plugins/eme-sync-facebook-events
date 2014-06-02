@@ -77,10 +77,14 @@ function eme_sfe_process_events() {
 	$eme_sfe_frequency = get_option('eme_sfe_frequency');
 
 	$events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids);
-	eme_sfe_send_events($events);
+   if ($events !== false && is_array($events))
+      eme_sfe_send_events($events);
 }
 
 function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids) {
+
+   if (empty($eme_sfe_api_key) || empty($eme_sfe_api_secret) || empty($eme_sfe_api_uids))
+      return false;
 
 	FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
 	$facebook_session = FacebookSession::newAppSession();
