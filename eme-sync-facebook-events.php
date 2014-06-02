@@ -125,13 +125,6 @@ function eme_sfe_check_location_fbid($id) {
 	return $wpdb->get_var($sql);
 }
 
-function eme_sfe_eme_needed() {
-   $advice = sprintf(__("This plugin requires 'Events Made Easy' to be installed.",'eme_sfe'));
-   ?>
-   <div id="message" class="error"><p> <?php echo $advice; ?> </p></div>
-   <?php
-}
-
 function eme_sfe_send_events($events) {
 	$offset = get_option('gmt_offset')*3600;
 
