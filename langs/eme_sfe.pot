@@ -1,0 +1,89 @@
+# Copyright (C) 2014 EME Sync Facebook Events
+# This file is distributed under the same license as the EME Sync Facebook Events package.
+msgid ""
+msgstr ""
+"Project-Id-Version: EME Sync Facebook Events 1.0.0\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/eme-sync-facebook-events\n"
+"POT-Creation-Date: 2014-06-02 18:36:47+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2014-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: eme-sync-facebook-events.php:237
+msgid "Synchronization of Facebook events to Events Made Easy complete."
+msgstr ""
+
+#: eme-sync-facebook-events.php:260
+msgid "This plugin requires 'Events Made Easy' to be installed."
+msgstr ""
+
+#: eme-sync-facebook-events.php:273
+msgid "Facebook App ID"
+msgstr ""
+
+#: eme-sync-facebook-events.php:274
+msgid "Facebook App Secret"
+msgstr ""
+
+#: eme-sync-facebook-events.php:275
+msgid "Daily"
+msgstr ""
+
+#: eme-sync-facebook-events.php:275
+msgid "Twice Daily"
+msgstr ""
+
+#: eme-sync-facebook-events.php:275
+msgid "Hourly"
+msgstr ""
+
+#: eme-sync-facebook-events.php:275
+msgid "None"
+msgstr ""
+
+#: eme-sync-facebook-events.php:276
+msgid "Update Fequency"
+msgstr ""
+
+#: eme-sync-facebook-events.php:277
+msgid "State for new event"
+msgstr ""
+
+#: eme-sync-facebook-events.php:279
+msgid "Add Facebook Page UID"
+msgstr ""
+
+#: eme-sync-facebook-events.php:289
+msgid "Update"
+msgstr ""
+
+#: eme-sync-facebook-events.php:295
+msgid "Updating all facebook events..."
+msgstr ""
+
+#: eme-sync-facebook-events.php:297
+msgid "Events Made Easy updated with current Facebook events."
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "EME Sync Facebook Events"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.e-dynamics.be/wordpress"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Sync Facebook Events to The Events Made Easy Plugin"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Franky Van Liedekerke"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://www.e-dynamics.be"
+msgstr ""
