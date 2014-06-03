@@ -276,7 +276,7 @@ function eme_sfe_options_page() {
 
 ?>
 	<div class="wrap">
-	 	<br /><div class="icon32" id="icon-plugins"><br/></div>
+	 	<br /><div class="icon32" id="icon-plugins"><br /></div>
 		<h2 style="margin-bottom:10px;">Events Made Easy Sync Facebook Events</h2>
 		<form method="post" action="">
 		<table class="form-table"> 
