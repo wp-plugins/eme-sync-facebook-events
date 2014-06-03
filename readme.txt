@@ -55,6 +55,9 @@ Upgrade Notice
 
 == Changelog ==
 
+= 1.0.2 =
+* Feature: allow to skip already synced events and locations, so you can edit these and keep the changes
+
 = 1.0.1 =
 * Improvement: do nothing if not all settings have been completed
 * Improvement: all strings are translate-ready now, and added eme_sfe.pot and language subdir

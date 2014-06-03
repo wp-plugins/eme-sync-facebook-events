@@ -156,8 +156,12 @@ function eme_sfe_send_events($events) {
 			$location['location_external_ref'] = 'fb_'.$fb_event['venue']->id;
 
 			if ($location_id) {
-				eme_update_location($location);
-				echo "<br />Updating location: $location_id";
+            if (get_option('eme_sfe_skip_synced')) {
+               echo "<br />Skipping already synchronized location: $location_id";
+            } else {
+               eme_update_location($location);
+               echo "<br />Updating location: $location_id";
+            }
 			} else {
 				$location = eme_insert_location($location);
 				$location_id = $location['location_id'];
@@ -192,8 +196,12 @@ function eme_sfe_send_events($events) {
 		if ($add_location_info)
 			$event['location_id']=$location_id;
 		if ($event_id) {
-			eme_db_update_event($event,$event_id);
-			echo "<br />Updating event: ".$event_id;
+         if (get_option('eme_sfe_skip_synced')) {
+            echo "<br />Skipping already synchronized event: $event_id";
+         } else {
+            eme_db_update_event($event,$event_id);
+            echo "<br />Updating event: ".$event_id;
+         }
 		} else {
 			$event_id=eme_db_insert_event($event);
 			echo "<br />Inserting event: ".$event_id;
@@ -230,6 +238,9 @@ function eme_sfe_options_page() {
 		
 		$eme_sfe_event_initial_state = $_POST['eme_sfe_event_initial_state'];
 		update_option('eme_sfe_event_initial_state', $eme_sfe_event_initial_state);
+		
+		$eme_sfe_skip_synced = $_POST['eme_sfe_skip_synced'];
+		update_option('eme_sfe_skip_synced', $eme_sfe_skip_synced);
 		
 		$events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids);
 
@@ -276,6 +287,7 @@ function eme_sfe_options_page() {
       $eme_sfe_frequencies=array('daily'=>__("Daily",'eme_sfe'),"twicedaily"=>__("Twice Daily",'eme_sfe'),"hourly"=>__("Hourly",'eme_sfe'),"none"=>__("None",'eme_sfe'));
       eme_options_select (__('Update Fequency','eme_sfe'), 'eme_sfe_frequency', $eme_sfe_frequencies, '');
       eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
+      eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'no' to overwrite already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
 		
       eme_options_input_text ( __('Add Facebook Page UID', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" />');
       ?>
