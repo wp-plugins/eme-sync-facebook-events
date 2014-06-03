@@ -287,7 +287,7 @@ function eme_sfe_options_page() {
       $eme_sfe_frequencies=array('daily'=>__("Daily",'eme_sfe'),"twicedaily"=>__("Twice Daily",'eme_sfe'),"hourly"=>__("Hourly",'eme_sfe'),"none"=>__("None",'eme_sfe'));
       eme_options_select (__('Update Fequency','eme_sfe'), 'eme_sfe_frequency', $eme_sfe_frequencies, '');
       eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
-      eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'no' to overwrite already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
+      eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'Yes' to skip already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
 		
       eme_options_input_text ( __('Add Facebook Page UID', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" />');
       ?>
