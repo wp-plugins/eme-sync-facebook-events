@@ -4,7 +4,7 @@ Plugin Name: EME Sync Facebook Events
 Plugin URI: http://www.e-dynamics.be/wordpress
 Description: Sync Facebook Events to The Events Made Easy Plugin 
 Author: Franky Van Liedekerke
-Version: 1.0.1
+Version: 1.0.2
 Author URI: http://www.e-dynamics.be
 */
  
@@ -48,7 +48,6 @@ use Facebook\FacebookAuthorizationException;
 use Facebook\GraphObject;
 use Facebook\GraphUser;
 use Facebook\GraphSessionInfo;
-
 
 register_activation_hook(__FILE__,'activate_eme_sfe');
 register_deactivation_hook(__FILE__,'deactivate_eme_sfe');
