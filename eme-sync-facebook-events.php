@@ -91,7 +91,6 @@ function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_
    FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
    $facebook_session = FacebookSession::newAppSession();
 
-   $offset = get_option('gmt_offset')*3600;
    $ret = array();
    foreach ($eme_sfe_api_uids as $key => $value) {
       if ($value!='') {
@@ -99,10 +98,17 @@ function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_
 
          foreach ($response->getGraphObjectList() as $graphobject) {
             $event_id = $graphobject->getProperty('id');
-            $event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id))->execute()->getGraphObject()->asArray();
-            $picture = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id.'/picture', array ('redirect' => false,'type' => 'normal',)))->execute()->getGraphObject()->asArray();
-            $event['event_picture_url']=$picture->url;
-            $offsetStart = strtotime($event['start_time'])+$offset;
+            // the following works, but doesn't return the cover (api bug?), so we specify the fields we want
+            //$event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id))->execute()->getGraphObject()->asArray();
+            $fields=array("fields"=>"id,name,location,venue,start_time,end_time,is_date_only,description,cover");
+            $event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id, $fields))->execute()->getGraphObject()->asArray();
+            if ($event['cover']) {
+               $event['event_picture_url']=$event['cover']->source;
+            } else {
+               $picture = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id.'/picture', array ('redirect' => false,'type' => 'normal')))->execute()->getGraphObject()->asArray();
+               $event['event_picture_url']=$picture->url;
+            }
+            $offsetStart = strtotime($event['start_time']);
             if($offsetStart > time())
                $ret[]=$event;
          }
@@ -131,14 +137,23 @@ function eme_sfe_check_location_fbid($id) {
    return $wpdb->get_var($sql);
 }
 
+function eme_sfe_check_location_coord($lat,$long) {
+   global $wpdb;
+   $table_name = $wpdb->prefix . LOCATIONS_TBNAME;
+   $sql = $wpdb->prepare("SELECT location_id FROM $table_name WHERE location_latitude = %f AND location_longitude = %f",$lat,$long);
+   return $wpdb->get_var($sql);
+}
+
 function eme_sfe_send_events($events) {
-   $offset = get_option('gmt_offset')*3600;
+   $offset = get_option('gmt_offset')*3600-date('Z');
 
    foreach($events as $fb_event) {
       $add_location_info=0;
       if (isset($fb_event['location'])) {
          $add_location_info=1;
          $location_id=eme_sfe_check_location_fbid($fb_event['venue']->id);
+         if (!$location_id && get_option('eme_sfe_use_loc_coord'))
+            $location_id=eme_sfe_check_location_coord($fb_event['venue']->latitude,$fb_event['venue']->longitude);
          if ($location_id)
             $location = eme_get_location($location_id);
          else
@@ -171,20 +186,17 @@ function eme_sfe_send_events($events) {
       else
          $event = eme_new_event();
 
-      $offsetStart = strtotime($fb_event['start_time'])+$offset;
-      if (isset($event['end_time']))
-         $offsetEnd = strtotime($fb_event['end_time'])+$offset;
-      else
-         $offsetEnd = $offsetStart+86400;
-
       $event['event_name']=$fb_event['name'];
+      $offsetStart = strtotime($fb_event['start_time'])+$offset;
       $event['event_start_date']=date("Y-m-d", $offsetStart);
-      $event['event_end_date']=date("Y-m-d", $offsetEnd);
       $event['event_start_time']=date("H:i", $offsetStart);
-      if (isset($event['end_time']))
+
+      if (isset($fb_event['end_time'])) {
+         $offsetEnd = strtotime($fb_event['end_time'])+$offset;
+         $event['event_end_date']=date("Y-m-d", $offsetEnd);
          $event['event_end_time']=date("H:i", $offsetEnd);
-      else
-         $event['event_end_time']="00:00";
+      }
+
       $event['event_status'] = get_option('eme_sfe_event_initial_state');
       $event['event_notes'] = $fb_event['description'];
       $event['event_image_url'] = $fb_event['event_picture_url'];
@@ -237,6 +249,9 @@ function eme_sfe_options_page() {
       $eme_sfe_skip_synced = $_POST['eme_sfe_skip_synced'];
       update_option('eme_sfe_skip_synced', $eme_sfe_skip_synced);
 
+      $eme_sfe_use_loc_coord = $_POST['eme_sfe_use_loc_coord'];
+      update_option('eme_sfe_use_loc_coord', $eme_sfe_use_loc_coord);
+
       $events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids);
 
       update_schedule($eme_sfe_frequency);
@@ -280,6 +295,7 @@ function eme_sfe_options_page() {
    $eme_sfe_frequencies=array('daily'=>__("Daily",'eme_sfe'),"twicedaily"=>__("Twice Daily",'eme_sfe'),"hourly"=>__("Hourly",'eme_sfe'),"none"=>__("None",'eme_sfe'));
    eme_options_select (__('Update Fequency','eme_sfe'), 'eme_sfe_frequency', $eme_sfe_frequencies, '');
    eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
+   eme_options_radio_binary (__('Use coordinates for locations','eme_sfe'), 'eme_sfe_use_loc_coord', __("Normally, the facebook location ID is used to check wether a location has been synchronized or not. Sometimes you want to use own locations with the same coordinates (latitude and longitude), so select 'Yes' to check for matching locations using coordinates.",'eme_sfe'));
    eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'Yes' to skip already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
    eme_options_input_text ( __('Add Facebook Page UID', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" />');
    ?>

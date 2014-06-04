@@ -55,6 +55,11 @@ Upgrade Notice
 
 == Changelog ==
 
+= 1.0.3 =
+* Feature: if wanted, use latitude and longitude to check for matching (existing) locations (next to the facebook id) to check if a location exists already
+* Work around a bug in the facebook api where the cover picture isn't returned
+* Bugfix: start/end time of imported events were wrong
+
 = 1.0.2 =
 * Feature: allow to skip already synced events and locations, so you can edit these and keep the changes
 
