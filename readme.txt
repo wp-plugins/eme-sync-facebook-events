@@ -3,13 +3,14 @@ Contributors: liedekef
 Tags: facebook, events, synchronize, calendar
 Requires at least: 3.5
 Tested up to: 3.9.1
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 
 A simple plugin to sync Facebook events to the Events Made Easy plugin.
 
 == Description ==
 
-A simple plugin to sync Facebook events to the Events Made Easy plugin, based on the old Sync Facebook Events plugin
+A simple plugin to sync Facebook events to the Events Made Easy plugin, based on the old Sync Facebook Events plugin.
+Uses the Facebook PHP API, which requires at least PHP 5.4 to work.
 
 Get The Events Made Easy plugin:
 http://wordpress.org/extend/plugins/events-made-easy/
