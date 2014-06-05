@@ -3,7 +3,7 @@ Contributors: liedekef
 Tags: facebook, events, synchronize, calendar
 Requires at least: 3.5
 Tested up to: 3.9.1
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 
 A simple plugin to sync Facebook events to the Events Made Easy plugin.
 
@@ -56,6 +56,10 @@ Upgrade Notice
 1. EME Sync Facebook Events Configuration
 
 == Changelog ==
+
+= 1.0.5 =
+* Improvement: add description to uploaded cover pictures
+* Improvement: before each run, check if the image referenced in the event still exists in the gallery
 
 = 1.0.4 =
 * Feature: you can now also use the facebook uid, next to the API uid itself. So e.g. 'webtrends' and '54905721286' will result in the same

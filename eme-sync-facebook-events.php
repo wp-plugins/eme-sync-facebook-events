@@ -4,7 +4,7 @@ Plugin Name: EME Sync Facebook Events
 Plugin URI: http://www.e-dynamics.be/wordpress
 Description: Sync Facebook Events to The Events Made Easy Plugin 
 Author: Franky Van Liedekerke
-Version: 1.0.4
+Version: 1.0.5
 Author URI: http://www.e-dynamics.be
 */
  
@@ -173,8 +173,9 @@ function eme_sfe_segments($url='') {
 
 function eme_sfe_check_image_id($id) {
    global $wpdb;
-   // returns false if the ID doesn't exist
-   return $wpdb->get_var("SELECT id FROM wp_posts WHERE id = '" . $id . "'", 'ARRAY_A');
+   // returns false if the ID doesn't exist or is not an attachment
+   $sql = $wpdb->prepare("SELECT id FROM wp_posts WHERE id = %d AND post_type='attachment'",$id);
+   return $wpdb->get_var($sql);
 }
 
 function eme_sfe_check_event_fbid($id) {
