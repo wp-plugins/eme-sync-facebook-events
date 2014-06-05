@@ -361,7 +361,7 @@ function eme_sfe_options_page() {
    eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
    eme_options_radio_binary (__('Use coordinates for locations','eme_sfe'), 'eme_sfe_use_loc_coord', __("Normally, the facebook location ID is used to check wether a location has been synchronized or not. Sometimes you want to use own locations with the same coordinates (latitude and longitude), so select 'Yes' to check for matching locations using coordinates.",'eme_sfe'));
    eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'Yes' to skip already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
-   eme_options_input_text ( __('Add Facebook Page UID', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" />');
+   eme_options_input_text ( __('Add Facebook Page', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" /><br />'.__("Can be a Facebook Page name like 'webtrends' or the Facebook Page ID for it (results in one less call to facebook).",'eme_sfe'));
    ?>
    <tr><td style="vertical-align:top;"></td><td>
    <?php

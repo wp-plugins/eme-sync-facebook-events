@@ -20,7 +20,7 @@ http://wordpress.org/extend/plugins/events-made-easy/
 1. Download the plugin archive and expand it
 2. Upload the eme-sync-facebook-events folder to your /wp-content/plugins/ directory
 3. Go to the plugins page and click 'Activate' for EME Sync FB Events
-4. Navigate to the Settings section within Wordpress and enter your Facebook App ID, App Secret & UID.
+4. Navigate to the Settings section within Wordpress and enter your Facebook App ID, App Secret & Page names or IDs you want to import.
 5. Ensure the Events Made Easy plugin is installed and configured - http://wordpress.org/extend/plugins/events-made-easy/
 5. Press 'Update' to synchronize your current Facebook events for display within Events Made Easy.
 6. Synchronization will continue to occur on the schedule you set. You can always update manually if/when needed.
@@ -32,11 +32,12 @@ Q: What is the Facebook App ID and App Secret, and why are they required?
 A: The Facebook App ID and App Secret are required by Facebook to access data via the Facebook graph API. 
 To signup for a developer account or learn more see - http://developers.facebook.com/docs/guides/canvas/
 
-Q: How do I find the Facebook UID of the page for which I wish to synchronize events?
+Q: How do I find the Facebook ID of the page for which I wish to synchronize events?
 
 A: Goto the page you're interested in - ex. https://www.facebook.com/webtrends  
 Copy the URL and replace 'www' with 'graph' - ex. https://graph.facebook.com/webtrends 
-The UID is the first item in the resulting text. In this example it is "54905721286".
+The ID is the first item in the resulting text. In this example it is "54905721286".
+Of course, 'webtrends' itself is accepted as a value too (it will just add an extra call to facebook to get the page ID).
 
 Q: Do my Facebook events get updated on a schedule?
 
@@ -44,7 +45,7 @@ A: Yes, You can choose the update interval and also update immediately when you 
 
 Q: Why do I get a blank screen when running an update?
 
-A: Check your Facebook App ID, Facebook App Secret and Facebook UID. One of them is probably incorrect.
+A: Check your Facebook App ID, Facebook App Secret and Facebook Page IDs. One of them is probably incorrect.
 
 == Upgrade Notice ==
 
