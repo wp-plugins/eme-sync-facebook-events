@@ -56,6 +56,10 @@ Upgrade Notice
 
 == Changelog ==
 
+= 1.0.4 =
+* Feature: you can now also use the facebook uid, next to the API uid itself. So e.g. 'webtrends' and '54905721286' will result in the same
+* Improvement: facebook cover pictures are now downloaded and uploaded into wp, so the power of the gallery is at our disposal now, and EME can use it as any other picture
+
 = 1.0.3 =
 * Feature: if wanted, use latitude and longitude to check for matching (existing) locations (next to the facebook id) to check if a location exists already
 * Work around a bug in the facebook api where the cover picture isn't returned

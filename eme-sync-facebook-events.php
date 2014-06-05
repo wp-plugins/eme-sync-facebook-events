@@ -24,6 +24,10 @@ Author URI: http://www.e-dynamics.be
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
+// for media upload
+require_once( ABSPATH . 'wp-admin/includes/file.php' );
+require_once( ABSPATH . 'wp-admin/includes/media.php' );
+
 // include required files form Facebook SDK
 require_once( 'Facebook/FacebookSession.php' );
 require_once( 'Facebook/FacebookRedirectLoginHelper.php' );
@@ -68,6 +72,41 @@ function update_schedule($eme_sfe_frequency) {
    }
 }
 
+function eme_sfe_media_sideload_image($url) {
+   // from media_sideload_image
+   if ( ! empty($url) ) {
+      // Download file to temp location
+      $tmp = download_url( $url );
+
+      // Set variables for storage
+      // fix file filename for query strings
+      preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $url, $matches );
+      $file_array['name'] = basename($matches[0]);
+      $file_array['tmp_name'] = $tmp;
+
+      // If error storing temporarily, unlink
+      if ( is_wp_error( $tmp ) ) {
+         @unlink($file_array['tmp_name']);
+         $file_array['tmp_name'] = '';
+      }
+
+      // do the validation and storage stuff
+      $post_id=0;
+      $desc='';
+      $id = media_handle_sideload( $file_array, $post_id, $desc );
+      // If error storing permanently, unlink
+      if ( is_wp_error($id) ) {
+         @unlink($file_array['tmp_name']);
+         return false;
+      }
+
+      $src = wp_get_attachment_url( $id );
+      return array(0=>$id,1=>$src);
+   } else {
+      return false;
+   }
+}
+
 function eme_sfe_add_page() { add_options_page('EME Sync FB Events', 'EME Sync FB Events', 'activate_plugins', __FILE__, 'eme_sfe_options_page'); }
 add_action('admin_menu', 'eme_sfe_add_page');
 
@@ -84,29 +123,38 @@ function eme_sfe_process_events() {
       eme_sfe_send_events($events);
 }
 
-function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids) {
-   if (empty($eme_sfe_api_key) || empty($eme_sfe_api_secret) || empty($eme_sfe_api_uids))
+function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_uids) {
+   if (empty($eme_sfe_api_key) || empty($eme_sfe_api_secret) || empty($eme_sfe_uids))
       return false;
 
    FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
    $facebook_session = FacebookSession::newAppSession();
 
    $ret = array();
-   foreach ($eme_sfe_api_uids as $key => $value) {
+   foreach ($eme_sfe_uids as $key => $value) {
       if ($value!='') {
-         $response = (new FacebookRequest( $facebook_session, 'GET', '/'.$value.'/events'))->execute();
+         if (is_numeric($value)) {
+            $events = (new FacebookRequest( $facebook_session, 'GET', '/'.$value.'/events'))->execute();
+         } else {
+            //$response = (new FacebookRequest( $facebook_session, 'GET', '/'.$value))->execute()->getGraphObject()->asArray();
+            $response = (new FacebookRequest( $facebook_session, 'GET', '/'.$value,array("fields"=>"id")))->execute()->getResponse();
+            $api_uid=$response->id;
+            $events = (new FacebookRequest( $facebook_session, 'GET', '/'.$api_uid.'/events'))->execute();
+         }
 
-         foreach ($response->getGraphObjectList() as $graphobject) {
+         foreach ($events->getGraphObjectList() as $graphobject) {
             $event_id = $graphobject->getProperty('id');
             // the following works, but doesn't return the cover (api bug?), so we specify the fields we want
             //$event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id))->execute()->getGraphObject()->asArray();
             $fields=array("fields"=>"id,name,location,venue,start_time,end_time,is_date_only,description,cover");
             $event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id, $fields))->execute()->getGraphObject()->asArray();
-            if ($event['cover']) {
+            if (isset($event['cover']) && !empty($event['cover'])) {
                $event['event_picture_url']=$event['cover']->source;
             } else {
                $picture = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id.'/picture', array ('redirect' => false,'type' => 'normal')))->execute()->getGraphObject()->asArray();
-               $event['event_picture_url']=$picture->url;
+               if ($picture->url) {
+                  $event['event_picture_url']=$picture->url;
+               }
             }
             $offsetStart = strtotime($event['start_time']);
             if($offsetStart > time())
@@ -199,7 +247,6 @@ function eme_sfe_send_events($events) {
 
       $event['event_status'] = get_option('eme_sfe_event_initial_state');
       $event['event_notes'] = $fb_event['description'];
-      $event['event_image_url'] = $fb_event['event_picture_url'];
       $event['event_external_ref'] = 'fb_'.$fb_event['id'];
       if ($add_location_info)
          $event['location_id']=$location_id;
@@ -207,10 +254,27 @@ function eme_sfe_send_events($events) {
          if (get_option('eme_sfe_skip_synced')) {
             echo "<br />Skipping already synchronized event: $event_id";
          } else {
+            if (isset($fb_event['event_picture_url'])) {
+               if (basename($fb_event['event_picture_url']) != basename($event['event_image_url'])) {
+                  // only upload if needed
+                  $res=eme_sfe_media_sideload_image($fb_event['event_picture_url']);
+                  if ($res && is_array($res)) {
+                     $event['event_image_id']=$res[0];
+                     $event['event_image_url']=$res[1];
+                  }
+               }
+            }
             eme_db_update_event($event,$event_id);
             echo "<br />Updating event: ".$event_id;
          }
       } else {
+         if (isset($fb_event['event_picture_url'])) {
+            $res=eme_sfe_media_sideload_image($fb_event['event_picture_url']);
+            if ($res && is_array($res)) {
+               $event['event_image_id']=$res[0];
+               $event['event_image_url']=$res[1];
+            }
+         }
          $event_id=eme_db_insert_event($event);
          echo "<br />Inserting event: ".$event_id;
       }
