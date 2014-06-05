@@ -72,7 +72,7 @@ function update_schedule($eme_sfe_frequency) {
    }
 }
 
-function eme_sfe_media_sideload_image($url) {
+function eme_sfe_media_sideload_image($url,$event_name) {
    // from media_sideload_image
    if ( ! empty($url) ) {
       // Download file to temp location
@@ -92,7 +92,7 @@ function eme_sfe_media_sideload_image($url) {
 
       // do the validation and storage stuff
       $post_id=0;
-      $desc='';
+      $desc="Cover image for EME event '$event_name'";
       $id = media_handle_sideload( $file_array, $post_id, $desc );
       // If error storing permanently, unlink
       if ( is_wp_error($id) ) {
@@ -169,6 +169,12 @@ function eme_sfe_segments($url='') {
    $parsed_url = parse_url($url);
    $path = trim($parsed_url['path'],'/');
    return explode('/',$path);
+}
+
+function eme_sfe_check_image_id($id) {
+   global $wpdb;
+   // returns false if the ID doesn't exist
+   return $wpdb->get_var("SELECT id FROM wp_posts WHERE id = '" . $id . "'", 'ARRAY_A');
 }
 
 function eme_sfe_check_event_fbid($id) {
@@ -255,9 +261,10 @@ function eme_sfe_send_events($events) {
             echo "<br />Skipping already synchronized event: $event_id";
          } else {
             if (isset($fb_event['event_picture_url'])) {
-               if (basename($fb_event['event_picture_url']) != basename($event['event_image_url'])) {
+               if (basename($fb_event['event_picture_url']) != basename($event['event_image_url']) ||
+                   (!empty($event['event_image_id']) && !eme_sfe_check_image_id($event['event_image_id']))) {
                   // only upload if needed
-                  $res=eme_sfe_media_sideload_image($fb_event['event_picture_url']);
+                  $res=eme_sfe_media_sideload_image($fb_event['event_picture_url'],$fb_event['name']);
                   if ($res && is_array($res)) {
                      $event['event_image_id']=$res[0];
                      $event['event_image_url']=$res[1];
@@ -269,7 +276,7 @@ function eme_sfe_send_events($events) {
          }
       } else {
          if (isset($fb_event['event_picture_url'])) {
-            $res=eme_sfe_media_sideload_image($fb_event['event_picture_url']);
+            $res=eme_sfe_media_sideload_image($fb_event['event_picture_url'],$fb_event['name']);
             if ($res && is_array($res)) {
                $event['event_image_id']=$res[0];
                $event['event_image_url']=$res[1];
