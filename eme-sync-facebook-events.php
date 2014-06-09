@@ -114,7 +114,6 @@ function eme_sfe_process_events() {
    // Get option values
    $eme_sfe_api_key = get_option('eme_sfe_api_key');
    $eme_sfe_api_secret = get_option('eme_sfe_api_secret');
-   $eme_sfe_api_uid = get_option('eme_sfe_api_uid');
    $eme_sfe_api_uids = get_option('eme_sfe_api_uids');	
    $eme_sfe_frequency = get_option('eme_sfe_frequency');
 
@@ -129,18 +128,12 @@ function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_uids
 
    FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
    $facebook_session = FacebookSession::newAppSession();
+   //$facebook_session = new FacebookSession($access_token);
 
    $ret = array();
    foreach ($eme_sfe_uids as $key => $value) {
       if ($value!='') {
-         if (is_numeric($value)) {
-            $events = (new FacebookRequest( $facebook_session, 'GET', '/'.$value.'/events'))->execute();
-         } else {
-            //$response = (new FacebookRequest( $facebook_session, 'GET', '/'.$value))->execute()->getGraphObject()->asArray();
-            $response = (new FacebookRequest( $facebook_session, 'GET', '/'.$value,array("fields"=>"id")))->execute()->getResponse();
-            $api_uid=$response->id;
-            $events = (new FacebookRequest( $facebook_session, 'GET', '/'.$api_uid.'/events'))->execute();
-         }
+         $events = (new FacebookRequest( $facebook_session, 'GET', '/'.$value.'/events'))->execute();
 
          foreach ($events->getGraphObjectList() as $graphobject) {
             $event_id = $graphobject->getProperty('id');
@@ -214,10 +207,26 @@ function eme_sfe_send_events($events) {
          else
             $location = eme_new_location();
          $location['location_name'] = $fb_event['location'];
-         $location['location_address'] = $fb_event['venue']->street;
-         $location['location_town'] = $fb_event['venue']->zip." ".$fb_event['venue']->city." ".$fb_event['venue']->country;
-         $location['location_latitude'] = $fb_event['venue']->latitude;
-         $location['location_longitude'] = $fb_event['venue']->longitude;
+         if (isset($fb_event['venue']->street))
+            $location['location_address'] = $fb_event['venue']->street;
+         if (isset($fb_event['venue']->zip))
+            $location['location_town'] = $fb_event['venue']->zip;
+         if (isset($fb_event['venue']->city))
+            if (!empty($location['location_town']))
+               $location['location_town'].=" ".$fb_event['venue']->city;
+            else
+               $location['location_town']=$fb_event['venue']->city;
+         if (isset($fb_event['venue']->country))
+            if (!empty($location['location_town']))
+               $location['location_town'].=" ".$fb_event['venue']->country;
+            else
+               $location['location_town']=$fb_event['venue']->country;
+            
+         if (isset($fb_event['venue']->latitude))
+            $location['location_latitude'] = $fb_event['venue']->latitude;
+         if (isset($fb_event['venue']->longitude))
+            $location['location_longitude'] = $fb_event['venue']->longitude;
+
          $location['location_description'] = '';
          $location['location_external_ref'] = 'fb_'.$fb_event['venue']->id;
 
@@ -309,9 +318,6 @@ function eme_sfe_options_page() {
       $eme_sfe_api_secret = $_POST['eme_sfe_api_secret'];
       update_option('eme_sfe_api_secret', $eme_sfe_api_secret);
 
-      $eme_sfe_api_uid = $_POST['eme_sfe_api_uid'];
-      update_option('eme_sfe_api_uid', $eme_sfe_api_uid);
-
       $eme_sfe_frequency = $_POST['eme_sfe_frequency'];
       update_option('eme_sfe_frequency', $eme_sfe_frequency);
 
@@ -369,7 +375,7 @@ function eme_sfe_options_page() {
    eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
    eme_options_radio_binary (__('Use coordinates for locations','eme_sfe'), 'eme_sfe_use_loc_coord', __("Normally, the facebook location ID is used to check wether a location has been synchronized or not. Sometimes you want to use own locations with the same coordinates (latitude and longitude), so select 'Yes' to check for matching locations using coordinates.",'eme_sfe'));
    eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'Yes' to skip already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
-   eme_options_input_text ( __('Add Facebook Page', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" /><br />'.__("Can be a Facebook Page name like 'webtrends' or the Facebook Page ID for it (results in one less call to facebook).",'eme_sfe'));
+   eme_options_input_text ( __('Add Facebook Page', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" /><br />'.__("Can be a Facebook Page name like 'webtrends' or the Facebook Page ID for it.",'eme_sfe'));
    ?>
    <tr><td style="vertical-align:top;"></td><td>
    <?php
