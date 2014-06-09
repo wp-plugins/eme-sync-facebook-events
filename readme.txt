@@ -59,6 +59,7 @@ Upgrade Notice
 
 = 1.0.6 =
 * Feature: also allow facebook private events to be synced
+* Feature: allow direct import of single event
 
 = 1.0.5 =
 * Improvement: add description to uploaded cover pictures

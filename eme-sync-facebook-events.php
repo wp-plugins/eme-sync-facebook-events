@@ -124,6 +124,37 @@ function eme_sfe_process_events() {
       eme_sfe_send_events($events);
 }
 
+function eme_sfe_get_event($eme_sfe_api_key,$eme_sfe_api_secret,$event_id,$facebook_session=0) {
+   if (empty($eme_sfe_api_key) || empty($eme_sfe_api_secret) || empty($event_id))
+      return false;
+
+   FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
+   if (!$facebook_session)
+      $facebook_session = FacebookSession::newAppSession();
+
+   // accept both event id and https://www.facebook.com/events/<event_id>
+   $event_id=preg_replace('/^.*facebook.com\/events\//','',$event_id);
+   $event_id=preg_replace('/\/.*$/','',$event_id);
+
+   // the following works, but doesn't return the cover (api bug?), so we specify the fields we want
+   //$event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id))->execute()->getGraphObject()->asArray();
+   $fields=array("fields"=>"id,name,location,venue,start_time,end_time,is_date_only,description,cover");
+   $event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id, $fields))->execute()->getGraphObject()->asArray();
+   if (isset($event['cover']) && !empty($event['cover'])) {
+      $event['event_picture_url']=$event['cover']->source;
+   } else {
+      $picture = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id.'/picture', array ('redirect' => false,'type' => 'normal')))->execute()->getGraphObject()->asArray();
+      if ($picture->url) {
+         $event['event_picture_url']=$picture->url;
+      }
+   }
+   $offsetStart = strtotime($event['start_time']);
+   if($offsetStart > time())
+      return $event;
+   else
+      return false;
+}
+
 function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_uids, $facebook_session=0) {
    if (empty($eme_sfe_api_key) || empty($eme_sfe_api_secret) || empty($eme_sfe_uids))
       return false;
@@ -139,20 +170,8 @@ function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_uids
 
          foreach ($events->getGraphObjectList() as $graphobject) {
             $event_id = $graphobject->getProperty('id');
-            // the following works, but doesn't return the cover (api bug?), so we specify the fields we want
-            //$event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id))->execute()->getGraphObject()->asArray();
-            $fields=array("fields"=>"id,name,location,venue,start_time,end_time,is_date_only,description,cover");
-            $event = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id, $fields))->execute()->getGraphObject()->asArray();
-            if (isset($event['cover']) && !empty($event['cover'])) {
-               $event['event_picture_url']=$event['cover']->source;
-            } else {
-               $picture = (new FacebookRequest( $facebook_session, 'GET', '/'.$event_id.'/picture', array ('redirect' => false,'type' => 'normal')))->execute()->getGraphObject()->asArray();
-               if ($picture->url) {
-                  $event['event_picture_url']=$picture->url;
-               }
-            }
-            $offsetStart = strtotime($event['start_time']);
-            if($offsetStart > time())
+            $event = eme_sfe_get_event($eme_sfe_api_key, $eme_sfe_api_secret, $event_id, $facebook_session);
+            if ($event)
                $ret[]=$event;
          }
       }
@@ -326,7 +345,6 @@ function eme_sfe_options_page() {
    </script>
 
 <?php
-
    // Get option values
    $eme_sfe_api_key = get_option('eme_sfe_api_key');
    $eme_sfe_api_secret = get_option('eme_sfe_api_secret');
@@ -335,6 +353,21 @@ function eme_sfe_options_page() {
    if (!$eme_sfe_api_uids)
       $eme_sfe_api_uids = array();
    $eme_sfe_frequency = get_option('eme_sfe_frequency');
+
+   FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
+   $helper = new FacebookJavaScriptLoginHelper();
+   try {
+      $js_session = $helper->getSession();
+      $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
+   } catch(FacebookRequestException $ex) {
+      // When Facebook returns an error
+      echo sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
+   } catch(FacebookSDKException $ex) {
+      echo sprintf(__("Facebook error: %s",'eme_sfe'),$ex);
+   } catch(\Exception $ex) {
+      // When validation fails or other local issues
+      echo sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
+   }
 
    $events=false;
    // Get new updated option values, and save them
@@ -358,27 +391,21 @@ function eme_sfe_options_page() {
       $eme_sfe_use_loc_coord = $_POST['eme_sfe_use_loc_coord'];
       update_option('eme_sfe_use_loc_coord', $eme_sfe_use_loc_coord);
 
-      FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
-      $helper = new FacebookJavaScriptLoginHelper();
-      try {
-         $js_session = $helper->getSession();
-         $events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids, $js_session);
-         $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
-      } catch(FacebookRequestException $ex) {
-         // When Facebook returns an error
-         $msg = sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
-      } catch(FacebookSDKException $ex) {
-         $msg = sprintf(__("Facebook error: %s",'eme_sfe'),$ex);
-      } catch(\Exception $ex) {
-         // When validation fails or other local issues
-         $msg = sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
-      }
+      ?>
+      <div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
+      <?php
 
+      $events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids, $js_session);
       update_schedule($eme_sfe_frequency);
 
+   } elseif( !empty($_POST['add-event-id']) ) {
+      $event_id=$_POST['eme_sfe_event_id'];
       ?>
-         <div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
+      <div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
       <?php
+      $event = eme_sfe_get_event($eme_sfe_api_key, $eme_sfe_api_secret, $event_id, $js_session);
+      if ($event)
+         $events = array(0=>$event);
 
    } elseif( !empty($_POST['add-uid']) ) {
       if(!in_array($_POST['eme_sfe_api_uid'], $eme_sfe_api_uids)) {
@@ -427,6 +454,9 @@ function eme_sfe_options_page() {
       }
    ?>
    </td></tr>
+   <?php
+   eme_options_input_text ( __('Import Single Event', 'eme_sfe'), 'eme_sfe_event_id', '<input type="submit" value="import_single" class="button-secondary" name="add-event-id" /><br />'.__("Directly import a single Facebook event. Either the Facebook url or just the Facebook event id is sufficient.",'eme_sfe').'<br />'.__("If you also want to sync Facebook private events, then log in using the facebook button. Facebook private events will NOT get synced periodically.",'eme_sfe'));
+   ?>
    <tr><td colspan="2"><input type="submit" value="<?php _e('Update','eme_sfe'); ?>" class="button-primary" name="update" /></td></tr>
    </table>
    </form>
