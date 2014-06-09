@@ -37,6 +37,7 @@ require_once( 'Facebook/FacebookSDKException.php' );
 require_once( 'Facebook/FacebookRequestException.php' );
 require_once( 'Facebook/FacebookOtherException.php' );
 require_once( 'Facebook/FacebookAuthorizationException.php' );
+require_once( 'Facebook/FacebookJavaScriptLoginHelper.php' );
 require_once( 'Facebook/GraphObject.php' );
 require_once( 'Facebook/GraphUser.php' );
 require_once( 'Facebook/GraphSessionInfo.php' );
@@ -49,6 +50,7 @@ use Facebook\FacebookSDKException;
 use Facebook\FacebookRequestException;
 use Facebook\FacebookOtherException;
 use Facebook\FacebookAuthorizationException;
+use Facebook\FacebookJavaScriptLoginHelper;
 use Facebook\GraphObject;
 use Facebook\GraphUser;
 use Facebook\GraphSessionInfo;
@@ -122,13 +124,13 @@ function eme_sfe_process_events() {
       eme_sfe_send_events($events);
 }
 
-function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_uids) {
+function eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_uids, $facebook_session=0) {
    if (empty($eme_sfe_api_key) || empty($eme_sfe_api_secret) || empty($eme_sfe_uids))
       return false;
 
    FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
-   $facebook_session = FacebookSession::newAppSession();
-   //$facebook_session = new FacebookSession($access_token);
+   if (!$facebook_session)
+      $facebook_session = FacebookSession::newAppSession();
 
    $ret = array();
    foreach ($eme_sfe_uids as $key => $value) {
@@ -299,6 +301,32 @@ function eme_sfe_send_events($events) {
 }
 
 function eme_sfe_options_page() {
+?>
+   <div id="fb-root"></div>
+   <script>
+   window.fbAsyncInit = function() {
+      // init the FB JS SDK
+      FB.init({
+         appId      : '<?php echo get_option("eme_sfe_api_key");?>',// App ID from the app dashboard
+         channelUrl : '<?php echo plugins_url( "eme_fb_channel.php", __FILE__ )?>', // Channel file for x-domain comms
+         cookie     : true,  // let's use a cookie afterwards for the php scripts
+         status     : true,  // Check Facebook Login status
+         xfbml      : true   // Look for social plugins on the page
+      });
+   };
+
+   // Load the SDK asynchronously
+   (function(d, s, id){
+       var js, fjs = d.getElementsByTagName(s)[0];
+       if (d.getElementById(id)) {return;}
+       js = d.createElement(s); js.id = id;
+       js.src = "//connect.facebook.net/en_US/all.js";
+       fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+   </script>
+
+<?php
+
    // Get option values
    $eme_sfe_api_key = get_option('eme_sfe_api_key');
    $eme_sfe_api_secret = get_option('eme_sfe_api_secret');
@@ -330,11 +358,24 @@ function eme_sfe_options_page() {
       $eme_sfe_use_loc_coord = $_POST['eme_sfe_use_loc_coord'];
       update_option('eme_sfe_use_loc_coord', $eme_sfe_use_loc_coord);
 
-      $events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids);
+      FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
+      $helper = new FacebookJavaScriptLoginHelper();
+      try {
+         $js_session = $helper->getSession();
+         $events = eme_sfe_get_events($eme_sfe_api_key, $eme_sfe_api_secret, $eme_sfe_api_uids, $js_session);
+         $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
+      } catch(FacebookRequestException $ex) {
+         // When Facebook returns an error
+         $msg = sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
+      } catch(FacebookSDKException $ex) {
+         $msg = sprintf(__("Facebook error: %s",'eme_sfe'),$ex);
+      } catch(\Exception $ex) {
+         // When validation fails or other local issues
+         $msg = sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
+      }
 
       update_schedule($eme_sfe_frequency);
 
-      $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
       ?>
          <div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
       <?php
@@ -366,7 +407,6 @@ function eme_sfe_options_page() {
    <h2 style="margin-bottom:10px;">Events Made Easy Sync Facebook Events</h2>
    <form method="post" action="">
    <table class="form-table"> 
-   <input type="hidden" name="update" />
    <?php
    eme_options_input_text ( __('Facebook App ID', 'eme_sfe' ), 'eme_sfe_api_key', '');
    eme_options_input_text ( __('Facebook App Secret', 'eme_sfe' ), 'eme_sfe_api_secret', '');
@@ -375,7 +415,9 @@ function eme_sfe_options_page() {
    eme_options_select (__('State for new event','eme_sfe'), 'eme_sfe_event_initial_state', eme_status_array(), '');
    eme_options_radio_binary (__('Use coordinates for locations','eme_sfe'), 'eme_sfe_use_loc_coord', __("Normally, the facebook location ID is used to check wether a location has been synchronized or not. Sometimes you want to use own locations with the same coordinates (latitude and longitude), so select 'Yes' to check for matching locations using coordinates.",'eme_sfe'));
    eme_options_radio_binary (__('Skip synced events and locations','eme_sfe'), 'eme_sfe_skip_synced', __("Select 'Yes' to skip already synchronized events and locations, otherwise these will be overwritten with every sync",'eme_sfe'));
-   eme_options_input_text ( __('Add Facebook Page', 'eme_sfe' ), 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" /><br />'.__("Can be a Facebook Page name like 'webtrends' or the Facebook Page ID for it.",'eme_sfe'));
+   ?>
+   <?php
+   eme_options_input_text ( __('Add Facebook Page', 'eme_sfe' ).'<br /><fb:login-button id="fb-login-button" width="200" autologoutlink="true" scope="user_events" max-rows="1"></fb:login-button>', 'eme_sfe_api_uid', '<input type="submit" value="Add" class="button-secondary" name="add-uid" /><br />'.__("Can be a Facebook Page name like 'webtrends' or the Facebook Page ID for it.",'eme_sfe').'<br />'.__("If you also want to sync Facebook private events, then log in using the facebook button. Facebook private events will NOT get synced periodically.",'eme_sfe'));
    ?>
    <tr><td style="vertical-align:top;"></td><td>
    <?php

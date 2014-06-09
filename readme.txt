@@ -57,6 +57,9 @@ Upgrade Notice
 
 == Changelog ==
 
+= 1.0.6 =
+* Feature: also allow facebook private events to be synced
+
 = 1.0.5 =
 * Improvement: add description to uploaded cover pictures
 * Improvement: before each run, check if the image referenced in the event still exists in the gallery
