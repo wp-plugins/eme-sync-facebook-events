@@ -355,19 +355,22 @@ function eme_sfe_options_page() {
    $eme_sfe_frequency = get_option('eme_sfe_frequency');
 
    FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
+   $js_session = false;
    $helper = new FacebookJavaScriptLoginHelper();
    try {
       $js_session = $helper->getSession();
       $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
    } catch(FacebookRequestException $ex) {
       // When Facebook returns an error
-      echo sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
-   } catch(FacebookSDKException $ex) {
-      echo sprintf(__("Facebook error: %s",'eme_sfe'),$ex);
+      //echo sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
+      $msg = __("Facebook error, private events will NOT be synced. Try to log out and in on Facebook using the button again.",'eme_sfe');
    } catch(\Exception $ex) {
       // When validation fails or other local issues
-      echo sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
+      //echo sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
+      $msg = __("Facebook validation error, private events will NOT be synced. Try to log out and in on Facebook using the button again.",'eme_sfe');
    }
+   if (!$js_session)
+      $msg = __("No valid Facebook session for this app detected, private events will NOT be synced.",'eme_sfe');
 
    $events=false;
    // Get new updated option values, and save them
