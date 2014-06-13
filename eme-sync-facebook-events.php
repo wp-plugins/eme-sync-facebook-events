@@ -4,7 +4,7 @@ Plugin Name: EME Sync Facebook Events
 Plugin URI: http://www.e-dynamics.be/wordpress
 Description: Sync Facebook Events to The Events Made Easy Plugin 
 Author: Franky Van Liedekerke
-Version: 1.0.5
+Version: 1.0.6
 Author URI: http://www.e-dynamics.be
 */
  
