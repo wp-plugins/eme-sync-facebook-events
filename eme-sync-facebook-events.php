@@ -354,23 +354,25 @@ function eme_sfe_options_page() {
       $eme_sfe_api_uids = array();
    $eme_sfe_frequency = get_option('eme_sfe_frequency');
 
-   FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
-   $js_session = false;
-   $helper = new FacebookJavaScriptLoginHelper();
-   try {
-      $js_session = $helper->getSession();
-      $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
-   } catch(FacebookRequestException $ex) {
-      // When Facebook returns an error
-      //echo sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
-      $msg = __("Facebook error, private events will NOT be synced. Try to log out and in on Facebook using the button again.",'eme_sfe');
-   } catch(\Exception $ex) {
-      // When validation fails or other local issues
-      //echo sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
-      $msg = __("Facebook validation error, private events will NOT be synced. Try to log out and in on Facebook using the button again.",'eme_sfe');
+   if (!empty($eme_sfe_api_key) && !empty($eme_sfe_api_secret)) {
+      FacebookSession::setDefaultApplication($eme_sfe_api_key,$eme_sfe_api_secret);
+      $js_session = false;
+      $helper = new FacebookJavaScriptLoginHelper();
+      try {
+         $js_session = $helper->getSession();
+         $msg = __("Synchronization of Facebook events to Events Made Easy complete.",'eme_sfe');
+      } catch(FacebookRequestException $ex) {
+         // When Facebook returns an error
+         //echo sprintf(__("Facebook login error: %s",'eme_sfe'),$ex);
+         $msg = __("Facebook error, private events will NOT be synced. Try to log out and in on Facebook using the button again.",'eme_sfe');
+      } catch(\Exception $ex) {
+         // When validation fails or other local issues
+         //echo sprintf(__("Facebook validation error: %s",'eme_sfe'),$ex);
+         $msg = __("Facebook validation error, private events will NOT be synced. Try to log out and in on Facebook using the button again.",'eme_sfe');
+      }
+      if (!$js_session)
+         $msg = __("No valid Facebook session for this app detected, private events will NOT be synced.",'eme_sfe');
    }
-   if (!$js_session)
-      $msg = __("No valid Facebook session for this app detected, private events will NOT be synced.",'eme_sfe');
 
    $events=false;
    // Get new updated option values, and save them
@@ -394,6 +396,7 @@ function eme_sfe_options_page() {
       $eme_sfe_use_loc_coord = $_POST['eme_sfe_use_loc_coord'];
       update_option('eme_sfe_use_loc_coord', $eme_sfe_use_loc_coord);
 
+      if (!empty($msg))
       ?>
       <div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
       <?php
@@ -403,6 +406,7 @@ function eme_sfe_options_page() {
 
    } elseif( !empty($_POST['add-event-id']) ) {
       $event_id=$_POST['eme_sfe_event_id'];
+      if (!empty($msg))
       ?>
       <div id="message" class="updated fade"><p><strong><?php echo $msg; ?></strong></p></div>
       <?php
