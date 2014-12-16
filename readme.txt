@@ -1,8 +1,8 @@
 === EME Sync Facebook Events ===
 Contributors: liedekef
 Tags: facebook, events, synchronize, calendar
-Requires at least: 3.5
-Tested up to: 4.0
+Requires at least: 4.0
+Tested up to: 4.1
 Stable tag: 1.0.7
 
 A simple plugin to sync Facebook events to the Events Made Easy plugin.
